@@ -1,0 +1,13 @@
+* DONE Review data collected in Collector virtual machine
+  CLOSED: [2020-03-31 Tue 19:10]
+* TODO Review format of processed data with Viktoria
+* TODO Process all the collected data for once!
+* TODO Documenting steps of the digesting data process
+** 1. Extractinmg data form mongodb databases and collections.
+   - Script used: expall.sh (stored in collector's home directory)
+*** TODO Move expall.sh to local machine and github
+** 2. Preprocessing the data to keep only relevant parts.
+   - Script used: ingester.py and process.sh in shared2 dir of Collector.
+*** TODO Move process.sh to local machine and github
+** 3. Send the data to the Processor machine.
+   - Script used: send.sh in shared2 directory of collector. This send to Processor home/digests.
