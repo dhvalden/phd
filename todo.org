@@ -6,9 +6,11 @@
 * TODO Documenting steps of the digesting data process
 ** 1. Extractinmg data form mongodb databases and collections.
    - Script used: expall.sh (stored in collector's home directory)
-*** TODO Move expall.sh to local machine and github
+*** DONE Move expall.sh to local machine and github
+    CLOSED: [2020-04-01 Wed 22:58]
 ** 2. Preprocessing the data to keep only relevant parts.
    - Script used: ingester.py and process.sh in shared2 dir of Collector.
-*** TODO Move process.sh to local machine and github
+*** DONE Move process.sh to local machine and github
+    CLOSED: [2020-04-01 Wed 22:58]
 ** 3. Send the data to the Processor machine.
    - Script used: send.sh in shared2 directory of collector. This send to Processor home/digests.
