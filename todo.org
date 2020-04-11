@@ -14,3 +14,8 @@
     CLOSED: [2020-04-01 Wed 22:58]
 ** 3. Send the data to the Processor machine.
    - Script used: send.sh in shared2 directory of collector. This send to Processor home/digests.
+** 4. On procssor machine extract text and emojis, and run models.
+* TODO Redo all digest 
+- Error in ingester.py full_text() function.
+- Not the real full text was extracted. All previous digests compromized.
+- Use new rust ingester.
