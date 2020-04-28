@@ -91,7 +91,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
             if let Err(e) = writeln!(outfile, "{}", &j) {
                 eprintln!("Couldn't write to file: {}", e);
             }
-            println!("{}", j);
+            //println!("{}", j);
         }
     }
     Ok(())
