@@ -54,7 +54,7 @@ impl From<Input> for Output {
 
 impl Config {
     pub fn new(args: &[String]) -> Result<Config, &'static str> {
-        if args.len() < 3 {
+        if args.len() < 4 {
             return Err("not enough arguments");
         }
         let infile = args[1].clone();
