@@ -84,8 +84,9 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         .unwrap();
 
     for line in reader.lines() {
+        let default: String = "None".to_string();
         let v: Input = serde_json::from_str(&line.unwrap())?;
-        if (&v.lang.as_ref().unwrap().to_string() == "en") && (ac.is_match(&v.text.as_ref().unwrap())) {
+        if (&v.lang.as_ref().unwrap_or(&default).to_string() == "en") && (ac.is_match(&v.text.as_ref().unwrap_or(&default))) {
             let output = Output::from(v);
             let j = serde_json::to_string(&output)?;
             if let Err(e) = writeln!(outfile, "{}", &j) {
