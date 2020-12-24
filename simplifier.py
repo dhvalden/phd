@@ -5,6 +5,7 @@ import sys
 import argparse
 import ujson
 from datetime import datetime
+from multiprocessing import Pool
 
 
 def validate_file(file_name):
@@ -23,17 +24,15 @@ def valid_path(path):
     return os.path.exists(path)
 
 
-def simplify(args):
+def simplify(input_file):
 
-    input_file = args.inputf
-    output_file = args.outputf
     counter = 0
 
     validate_file(input_file)
     sys.stdout.write("Simplifying %s... " % input_file)
 
     with open(input_file, "r", encoding="utf-8") as f,\
-    open(output_file, "w", encoding="utf-8") as outf:
+    open("simple_" + input_file, "w", encoding="utf-8") as outf:
         for line in f:
             tweet = ujson.loads(line)
             out = {}
@@ -46,6 +45,10 @@ def simplify(args):
             else:
                 out["full_text"] = tweet["text"]
             out["lang"] = tweet["lang"]
+            out["hashtags"] = tweet["hashtags"]
+            out["user_mentions"] = tweet["user_mentions"]
+            out["retweeted_status"] = tweet["retweeted_status"]
+            out["quoted_status"] = tweet["quoted_status"]
             outf.write(ujson.dumps(out, ensure_ascii=False)+"\n")
             counter += 1
 
@@ -56,16 +59,16 @@ def main():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-i", "--inputf", type=str,
-                        help="Input file")
-
-    parser.add_argument("-o", "--outputf", type=str,
-                        help="Output file")
+    parser.add_argument("-i", "--inputf", nargs='+', type=str,
+                        help="Input file(s)")
 
     args = parser.parse_args()
 
-    if args.inputf is not None and args.outputf is not None:
-        simplify(args)
+    filenames = args.inputf
+
+    if args.inputf is not None:
+        with Pool(3) as p:
+            p.map(simplify, filenames)
 
 
 if __name__ == '__main__':

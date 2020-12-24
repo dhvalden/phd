@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 import os
-import json
+import ujson as json
 import sys
 import argparse
 
 # Utility funtions
-
 
 def validate_file(file_name):
     """
@@ -23,30 +22,15 @@ def valid_path(path):
     return os.path.exists(path)
 
 
-def spinning_cursor():
-    while True:
-        for cursor in "|/-\\":
-            yield cursor
-
-
-def _make_gen(reader):
-    b = reader(1024 * 1024)
-    while b:
-        yield b
-        b = reader(1024*1024)
-
-
-def rawgencount(filename):
-    f = open(filename, 'rb')
-    f_gen = _make_gen(f.raw.read)
-    nlines = sum(buf.count(b'\n') for buf in f_gen)
-    sys.stdout.write("%s objects found. " % nlines)
-
-
 def ingester(line):
     tweet = json.loads(line)
     digest = {}
-    digest["id"] = tweet["id_str"]
+    if "id_str" in tweet:
+        digest["id"] = tweet["id_str"]
+    elif "id" in tweet:
+        digest["id"] = str(tweet["id"])
+    else:
+        digest["id"] = None
     digest["created_at"] = tweet["created_at"]
     digest["screen_name"] = tweet["user"]["screen_name"]
     digest["location"] = tweet["user"]["location"]
@@ -63,15 +47,41 @@ def ingester(line):
     digest["reply_count"] = tweet["reply_count"]
     digest["retweet_count"] = tweet["retweet_count"]
     digest["favorite_count"] = tweet["favorite_count"]
-    digest["retweeted_status"]["text"] = tweet.get("retweeted_status").get("text")
-    digest["quoted_status"]["text"] = tweet.get("quoted_status").get("text")
-    digest["retweeted_status"]["full_text"] = tweet.get("retweeted_status").get("extended_tweet").get("full_text")
-    digest["quoted_status"]["full_text"] = tweet.get("quoted_status").get("extended_tweet").get("full_text")
+    digest["retweeted_status"] = {}
+    digest["quoted_status"] = {}
+
+    if "retweeted_status" in tweet:
+        digest["retweeted_status"]["text"] = tweet.get("retweeted_status")\
+                                                  .get("text")
+        try:
+            digest["retweeted_status"]["full_text"] = tweet.get("retweeted_status")\
+                                                           .get("extended_tweet")\
+                                                           .get("full_text")
+        except AttributeError:
+            digest["retweeted_status"]["full_text"] = None
+    else:
+        digest["retweeted_status"] = None
+
+    if "quoted_status" in tweet:
+        digest["quoted_status"]["text"] = tweet.get("quoted_status")\
+                                               .get("text")
+        try:
+            digest["quoted_status"]["full_text"] = tweet.get("quoted_status")\
+                                                        .get("extended_tweet")\
+                                                        .get("full_text")
+        except AttributeError:
+            digest["quoted_status"]["full_text"] = None
+    else:
+        digest["quoted_status"] = None
+
     digest["hashtags"] = tweet["entities"]["hashtags"]
     digest["urls"] = tweet["entities"]["urls"]
     digest["user_mentions"] = tweet["entities"]["user_mentions"]
     digest["text"] = tweet["text"]
-    digest["extended_text"] = tweet.get("extended_tweet").get("full_text")
+    if "extended_tweet" in tweet:
+        digest["extended_text"] = tweet.get("extended_tweet").get("full_text")
+    else:
+        digest["extended_text"] = None
     digest["source"] = tweet["source"]
     digest["lang"] = tweet["lang"]
 
@@ -83,10 +93,9 @@ def writer(args):
     input_file = args.input_file
     output_file = args.output_file
 
-    validate_file(input_file)
-
     counter = 0
-    spinner = spinning_cursor()
+    
+    validate_file(input_file)
 
     sys.stdout.write("Processing... ")
 
@@ -95,15 +104,10 @@ def writer(args):
         for line in f:
             try:
                 output = ingester(line)
-                out.write(json.dumps(output, ensure_ascii=False)+"\n")
-            except:
+            except KeyError:
                 continue
+            out.write(json.dumps(output, ensure_ascii=False)+"\n")
             counter += 1
-            if counter % 1000 == 0:
-                sys.stdout.write(next(spinner))
-                sys.stdout.flush()
-                sys.stdout.write("\b")
-
     sys.stdout.write("Done!. %s objects processed.\n" % counter)
 
 
@@ -117,15 +121,8 @@ def main():
     parser.add_argument("output_file", type=str,
                         help="Output file")
 
-    parser.add_argument("-c", "--count", help="Count the number of objects",
-                        action="store_true")
-
     # parse the arguments from standard input
     args = parser.parse_args()
-
-    # calling functions depending on type of argument
-    if args.count:
-        rawgencount(args.input_file)
 
     if args.input_file is not None and args.output_file is not None:
         writer(args)
