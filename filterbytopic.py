@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 import os
-import sys
 import argparse
 import ujson
+from itertools import product
+from multiprocessing import Pool
 
 
 def validate_file(file_name):
@@ -22,45 +23,87 @@ def valid_path(path):
     return os.path.exists(path)
 
 
-def filtertopic(args):
+def filtertopic(input_file, qfile):
 
-    input_file = args.inputf
-    output_file = args.outputf
-    qfile = args.qfile
     counter = 0
-
     validate_file(input_file)
-    sys.stdout.write("Filtering %s... " % input_file)
+    outfile = os.path.basename(qfile) + "_" + os.path.basename(input_file)
 
     with open(input_file, "r", encoding="utf-8") as f,\
-    open(output_file, "w", encoding="utf-8") as outf,\
+    open(outfile, "w", encoding="utf-8") as outf,\
     open(qfile, "r", encoding="utf-8") as qf:
         keywords = [line.rstrip() for line in qf]
+        keywords = set(keywords)
         for line in f:
             tweet = ujson.loads(line)
             text = tweet["full_text"]
-            if any(kw in text for kw in keywords):
-                outf.write(ujson.dumps(tweet, ensure_ascii=False)+"\n")
-                counter += 1
+            try:
+                if tweet["retweeted_status"]:
+                    if tweet["retweeted_status"]["extended_tweet"]:
+                        rt = tweet["retweeted_status"]["extended_tweet"]["full_text"]
+                    else:
+                        rt = tweet["retweeted_status"]["text"]
+                else:
+                    rt = None
+            except KeyError:
+                rt = None
+                pass
 
-    sys.stdout.write("Done!. %s tweets filtered.\n" % counter)
+            try:
+                if tweet["quoted_status"]:
+                    if tweet["quoted_status"]["extended_tweet"]:
+                        qt = tweet["quoted_status"]["extended_tweet"]["full_text"]
+                    else:
+                        qt = tweet["quoted_status"]["text"]
+                else:
+                    qt = None
+            except KeyError:
+                qt = None
+                pass
+
+            try:
+                if any(kw in text for kw in keywords):
+                    outf.write(ujson.dumps(tweet, ensure_ascii=False)+"\n")
+                    counter += 1
+                    continue
+            except TypeError:
+                pass
+            try:
+                if any(kw in rt for kw in keywords):
+                    outf.write(ujson.dumps(tweet, ensure_ascii=False)+"\n")
+                    counter += 1
+                    continue
+            except TypeError:
+                pass
+            try:
+                if any(kw in qt for kw in keywords):
+                    outf.write(ujson.dumps(tweet, ensure_ascii=False)+"\n")
+                    counter += 1
+                    continue
+            except TypeError:
+                pass
+
+    print("Done! {} tweets filtered in {}.".format(counter, input_file))
 
 
 def main():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-i", "--inputf", type=str,
-                        help="Input file")
-    parser.add_argument("-o", "--outputf", type=str,
-                        help="Output file")
-    parser.add_argument("-q", "--qfile", type=str,
+    parser.add_argument("-i", "--inputf", nargs='+', type=str,
+                        help="Input file(s)")
+
+    parser.add_argument("-q", "--qfile", nargs='+', type=str,
                         help="Query file")
 
     args = parser.parse_args()
 
-    if args.inputf is not None and args.outputf is not None:
-        filtertopic(args)
+    filenames = args.inputf
+    qfiles = args.qfile
+
+    if args.inputf is not None:
+        with Pool(3) as p:
+            p.starmap(filtertopic, product(filenames, qfiles))
 
 
 if __name__ == '__main__':
