@@ -154,4 +154,7 @@ static
 # Undo-tree save-files
 *.~undo-tree
 
+# rawdata files and outputs
+*.json
+*.html
 
