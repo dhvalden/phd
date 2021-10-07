@@ -157,4 +157,5 @@ static
 # rawdata files and outputs
 *.json
 *.html
-
+*.csv
+*.png
