@@ -18,14 +18,12 @@ class Evaluator(object):
     """
     def __init__(self,
                  model_name,
-                 tokenizer_name,
                  state_dict_path,
                  data_path,
                  out_path,
                  batch_size):
         super(Evaluator, self).__init__()
         self.model_name: str = model_name
-        self.tokenizer_name: str = tokenizer_name
         self.state_dict_path: str = state_dict_path
         self.data_path: str = data_path
         self.batch_size: int = batch_size

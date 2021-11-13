@@ -20,7 +20,6 @@ class Trainer(object):
     training process.
     """
     def __init__(self, model_name,
-                 tokenizer_name,
                  data_path,
                  out_path,
                  epochs=3,
@@ -28,7 +27,6 @@ class Trainer(object):
                  test_size=0.25):
         super(Trainer, self).__init__()
         self.model_name: str = model_name
-        self.tokenizer_name: str = tokenizer_name
         self.data_path: str = data_path
         self.out_path: str = out_path
         self.epochs: int = epochs
