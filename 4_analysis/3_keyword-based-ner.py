@@ -1,101 +1,12 @@
 import argparse
 import re
 import string
+import json
 import pandas as pd
 from nltk.tokenize import TweetTokenizer
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from collections import Counter
-
-keywords_xr = {
-    'climatechange': 'groupbased-motivator',
-    'climate change': 'groupbased-motivator',
-    'climatecrisis': 'groupbased-motivator',
-    'climate crisis': 'groupbased-motivator',
-    'climateemergency': 'groupbased-motivator',
-    'climate emergency': 'groupbased-motivator',
-    'climate': 'groupbased-motivator',
-    'globalwarming': 'groupbased-motivator',
-    'global warming': 'groupbased-motivator',
-    'pollution': 'groupbased-motivator',
-    'carbon emissions': 'groupbased-motivator',
-    'carbon footprint': 'groupbased-motivator',
-    'carbon': 'groupbased-motivator',
-
-    'extinctionr': 'ingroup',
-    'extinctionrebellion': 'ingroup',
-    'extinction rebellion': 'ingroup',
-    'rebels': 'ingroup',
-
-    'climatestrike': 'collective-action',
-    'climate strike': 'collective-action',
-    'civil disobedience': 'collective-action',
-    'arrest': 'collective-action',
-    'nonviolent civil disobedience': 'collective-action',
-    'nonviolent': 'collective-action',
-    'non-violent': 'collective-action',
-    'non violent': 'collective-action',
-    'non violent action': 'collective-action',
-
-    'government': 'outgroup',
-    'borisjohnson': 'outgroup',
-    'boris johnson': 'outgroup',
-    'prime minister': 'outgroup',
-    'oil companies': 'outgroup',
-    'companies': 'outgroup',
-    'company': 'outgroup',
-    'fossil fuel': 'outgroup',
-    'coal': 'outgroup',
-    'big coal': 'outgroup',
-    'coal giant': 'outgroup',
-}
-
-keywords_f4f = {
-    'climatechange': 'groupbased-motivator',
-    'climate change': 'groupbased-motivator',
-    'climatecrisis': 'groupbased-motivator',
-    'climate crisis': 'groupbased-motivator',
-    'climateemergency': 'groupbased-motivator',
-    'climate emergency': 'groupbased-motivator',
-    'climate': 'groupbased-motivator',
-    'globalwarming': 'groupbased-motivator',
-    'global warming': 'groupbased-motivator',
-    'pollution': 'groupbased-motivator',
-    'carbon emissions': 'groupbased-motivator',
-    'carbon footprint': 'groupbased-motivator',
-    'carbon': 'groupbased-motivator',
-
-    'fridaysforfuture': 'ingroup',
-    'fridays for future': 'ingroup',
-    'fridays4future': 'ingroup',
-    'kids': 'ingroup',
-    'youth': 'ingroup',
-    'students': 'ingroup',
-    'movement': 'ingroup',
-    'children': 'ingroup',
-
-    'climatestrike': 'collective-action',
-    'climate strike': 'collective-action',
-    'schoolstrike': 'collective-action',
-    'school strike': 'collective-action',
-    'schoolstrikeforclimate': 'collective-action',
-    'school strike for climate': 'collective-action',
-    'schoolstrike4climate': 'collective-action',
-    'schoolstrike 4climate': 'collective-action',
-    'civil disobedience': 'collective-action',
-    'strike': 'collective-action',
-    'protest': 'collective-action',
-
-    'government': 'outgroup',
-    'oil companies': 'outgroup',
-    'companies': 'outgroup',
-    'company': 'outgroup',
-    'fossil fuel': 'outgroup',
-    'coal': 'outgroup',
-    'big coal': 'outgroup',
-    'coal giant': 'outgroup',
-    'parliament': 'outgroup'
-}
 
 
 mystopwords = stopwords.words('english')
@@ -159,20 +70,25 @@ def get_value(mystring, mydict):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--file_path', type=str)
-    parser.add_argument('-o', '--out_path', type=str)
-    args = parser.parse_args()
+    parser.add_argument('-i', '--input_file', type=str)
+    parser.add_argument('-k', '--keywords_file', type=str)
+    parser.add_argument('-m', '--s_movement', type=str)
+    parser.add_argument('-o', '--output_file', type=str)
 
-    df = pd.read_csv(args.file_path, lineterminator='\n')
+    args = parser.parse_args()
+    df = pd.read_csv(args.input_file, lineterminator='\n')
     df['full_text'] = df['full_text'].astype(str)
     df['clean_text'] = df['full_text'].apply(preprocess)
     clean_tweets = df['clean_text'].to_list()
 
-    out = [get_value(tweet, keywords_xr) for tweet in clean_tweets]
+    with open(args.keywords_file) as kfile:
+        data = json.load(kfile)
+        keywords = data['movements'][args.s_movement]
+        out = [get_value(tweet, keywords) for tweet in clean_tweets]
 
     result_df = pd.DataFrame.from_records(out).fillna(0).astype(int)
 
-    pd.concat([df, result_df], axis=1).to_csv(args.out_path)
+    pd.concat([df, result_df], axis=1).to_csv(args.output_file)
 
 
 if __name__ == '__main__':
